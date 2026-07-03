@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -100,6 +99,12 @@
   ul.check li.memo-open .memo-wrap{display:block}
   .memo-wrap textarea{width:100%;min-height:52px;resize:vertical;border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-family:var(--sans);font-size:13px;line-height:1.55;background:#fffdf8;color:var(--ink)}
   .memo-wrap textarea:focus{outline:none;border-color:var(--ochre);box-shadow:0 0 0 2px var(--ochre-soft)}
+  .memo-actions{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:6px}
+  .memo-hint{font-size:11px;color:var(--faint);margin-right:auto}
+  .memo-save{border:1px solid var(--line);background:#fff;color:var(--muted);font-family:var(--sans);font-size:12px;font-weight:600;padding:6px 16px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .memo-save:hover{border-color:var(--blue-2);color:var(--blue-2)}
+  .memo-save.dirty{background:var(--ochre);border-color:var(--ochre);color:#2a1e08}
+  .memo-save.saved{background:var(--green-soft);border-color:var(--green);color:var(--green)}
   h3.subh{font-size:15px;font-weight:700;margin:26px 0 10px;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
   h3.subh::before{content:"";width:14px;height:2px;background:var(--ochre);border-radius:2px}
   .funnel{display:flex;gap:0;margin:8px 0 20px;flex-wrap:wrap}
@@ -597,11 +602,13 @@ function pull(){ var c=cfg(); if(!c.url){ setSync('local'); return; } setSync('s
     else { setSync('offline'); }
   }).catch(function(){ setSync('offline'); });
 }
-function push(id){ var c=cfg(); save(); if(!c.url){ setSync('local'); return; } var it=get(id); setSync('syncing');
+function push(id, cb){ var c=cfg(); save(); if(!c.url){ setSync('local'); if(cb) cb('local'); return; } var it=get(id); setSync('syncing');
   fetch(c.url,{method:'POST', body:JSON.stringify({token:c.token, id:id, s:it.s, m:it.m})})
-    .then(function(){ delete pending[id]; setSync('sheet'); })
-    .catch(function(){ pending[id]=true; setSync('offline'); });
+    .then(function(){ delete pending[id]; setSync('sheet'); if(cb) cb('sheet'); })
+    .catch(function(){ pending[id]=true; setSync('offline'); if(cb) cb('offline'); });
 }
+function markDirty(li){ li.dataset.dirty='1'; var b=li.querySelector('.memo-save'); if(b){ b.classList.remove('saved'); b.classList.add('dirty'); b.textContent='저장'; } }
+function clearDirty(li){ li.dataset.dirty=''; var b=li.querySelector('.memo-save'); if(b) b.classList.remove('dirty'); }
 function flush(){ Object.keys(pending).forEach(function(id){ push(id); }); }
 
 function build(){
@@ -620,16 +627,21 @@ function build(){
     ctrls.appendChild(mt); li.appendChild(ctrls);
     var mw=document.createElement('div'); mw.className='memo-wrap';
     var ta=document.createElement('textarea'); ta.placeholder='메모'; ta.value=cur.m||'';
-    ta.addEventListener('input',function(){ setLocal(id,{m:ta.value}); memoBtn(li); clearTimeout(memoTimer); memoTimer=setTimeout(function(){ push(id); },700); });
-    ta.addEventListener('blur',function(){ clearTimeout(memoTimer); push(id); });
-    mw.appendChild(ta); li.appendChild(mw);
+    var act=document.createElement('div'); act.className='memo-actions';
+    var hint=document.createElement('span'); hint.className='memo-hint';
+    var sv=document.createElement('button'); sv.type='button'; sv.className='memo-save'; sv.textContent='저장';
+    ta.addEventListener('input',function(){ setLocal(id,{m:ta.value}); memoBtn(li); markDirty(li); });
+    sv.addEventListener('click',function(){ clearDirty(li); sv.textContent='저장 중…'; push(id,function(mode){ sv.classList.add('saved'); sv.textContent = mode==='offline' ? '로컬 저장됨' : '저장됨 ✓'; setTimeout(function(){ sv.classList.remove('saved'); sv.textContent='저장'; },1600); }); });
+    ta.addEventListener('blur',function(){ if(li.dataset.dirty==='1'){ clearDirty(li); push(id); } });
+    act.appendChild(hint); act.appendChild(sv);
+    mw.appendChild(ta); mw.appendChild(act); li.appendChild(mw);
     if(cur.m) li.classList.add('memo-open');
     paint(li); memoBtn(li);
   });
 }
 function paint(li){ var s=get(li.dataset.id).s; li.classList.remove('s-todo','s-doing','s-done','s-skip'); li.classList.add('s-'+s); li.querySelectorAll('.status button').forEach(function(b){ b.classList.toggle('on', b.dataset.s===s); }); }
 function memoBtn(li){ var has=!!get(li.dataset.id).m, mt=li.querySelector('.memo-toggle'); mt.classList.toggle('has',has); mt.textContent = has ? '메모 ●' : '메모'; }
-function renderAll(){ document.querySelectorAll('ul.check li').forEach(function(li){ paint(li); memoBtn(li); var ta=li.querySelector('.memo-wrap textarea'); var m=get(li.dataset.id).m; if(ta && document.activeElement!==ta){ ta.value=m||''; } if(m) li.classList.add('memo-open'); }); progress(); }
+function renderAll(){ document.querySelectorAll('ul.check li').forEach(function(li){ paint(li); memoBtn(li); var ta=li.querySelector('.memo-wrap textarea'); var m=get(li.dataset.id).m; if(ta && document.activeElement!==ta){ ta.value=m||''; clearDirty(li); } if(m) li.classList.add('memo-open'); }); progress(); }
 function progress(){
   document.querySelectorAll('section[data-sec]').forEach(function(sec){
     var items=sec.querySelectorAll('ul.check li'); if(!items.length) return;
