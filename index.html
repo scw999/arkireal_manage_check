@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arkireal 실행 대시보드 · AX·영업·마케팅·NAS</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{
+    --paper:#F0EEE7;--surface:#FBFAF5;--surface-2:#F6F4ED;--ink:#161719;
+    --muted:#6E6A61;--faint:#9B968B;--line:#DED9CC;--line-soft:#E8E4D9;
+    --blue:#14293D;--blue-2:#2F5D82;--blue-ghost:#5b7f9e;
+    --ochre:#BC8632;--ochre-soft:#f3e9d4;--green:#3E7D5A;--green-soft:#e2ecdf;
+    --skip:#8a857b;--radius:10px;
+    --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+    --sans:"Pretendard",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased;font-size:15px}
+  a{color:var(--blue-2);text-decoration:none}a:hover{text-decoration:underline}
+  .wrap{display:flex;min-height:100vh}
+  .sidebar{width:280px;flex:0 0 280px;background:var(--blue);color:#e9edf1;position:sticky;top:0;height:100vh;overflow-y:auto;padding:26px 22px 40px}
+  .main{flex:1 1 auto;min-width:0;padding:44px 52px 120px;max-width:1000px}
+  .brand{font-weight:800;font-size:19px;letter-spacing:-.02em;line-height:1.25}
+  .brand small{display:block;font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.14em;color:var(--blue-ghost);margin-top:8px;text-transform:uppercase}
+  .prog-overall{margin:22px 0 14px;padding:16px 0 4px;border-top:1px solid rgba(255,255,255,.1);border-bottom:1px solid rgba(255,255,255,.1)}
+  .prog-overall .lab{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;color:var(--blue-ghost);text-transform:uppercase;display:flex;justify-content:space-between;margin-bottom:9px}
+  .bar{height:7px;border-radius:20px;background:rgba(255,255,255,.12);overflow:hidden;display:flex}
+  .bar>i{display:block;height:100%;width:0;transition:width .5s cubic-bezier(.4,0,.2,1)}
+  .bar>i.g{background:linear-gradient(90deg,#4a9169,#63b487)}.bar>i.a{background:linear-gradient(90deg,var(--ochre),#e0b45f)}
+  .prog-overall .big{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-top:12px}
+  .prog-overall .big span{font-size:14px;color:var(--blue-ghost);font-weight:500}
+  .legend{display:flex;gap:14px;font-size:11px;color:#c3ccd5;margin:2px 0 16px;flex-wrap:wrap}
+  .legend span{display:flex;align-items:center;gap:5px}
+  .legend i.d{width:9px;height:9px;border-radius:3px;display:inline-block}
+  .legend i.done{background:#63b487}.legend i.doing{background:var(--ochre)}.legend i.skip{background:var(--skip)}
+  nav a.navlink{display:flex;align-items:center;gap:10px;color:#c3ccd5;padding:8px 10px;border-radius:7px;font-size:13.5px;font-weight:500;margin:1px 0}
+  nav a.navlink:hover{background:rgba(255,255,255,.06);text-decoration:none;color:#fff}
+  nav a.navlink.active{background:rgba(255,255,255,.1);color:#fff}
+  nav a.navlink .code{font-family:var(--mono);font-size:10px;color:var(--blue-ghost);flex:0 0 30px}
+  nav a.navlink.active .code{color:var(--ochre)}
+  nav a.navlink .tick{margin-left:auto;font-size:10px;font-family:var(--mono);color:#63b487}
+  .navgroup{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--blue-ghost);text-transform:uppercase;margin:18px 0 6px 10px}
+  .side-foot{margin-top:26px;padding-top:16px;border-top:1px solid rgba(255,255,255,.1);font-size:11.5px;color:var(--blue-ghost);line-height:1.7}
+  .syncpill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);padding:5px 10px;border-radius:20px;margin:0 0 8px;background:rgba(255,255,255,.08);color:#c3ccd5}
+  .syncpill i{width:8px;height:8px;border-radius:50%;background:var(--skip);flex:0 0 8px}
+  .syncpill.sheet i{background:#63b487}.syncpill.sheet{color:#bfe3ce}
+  .syncpill.syncing i{background:#e0b45f}.syncpill.syncing{color:#ecd7a8}
+  .syncpill.offline i{background:#e08a5f}.syncpill.offline{color:#ecc2a8}
+  .side-foot .fbtns{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .side-foot button{background:transparent;border:1px solid rgba(255,255,255,.2);color:#c3ccd5;font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;padding:6px 11px;border-radius:6px;cursor:pointer}
+  .side-foot button:hover{background:rgba(255,255,255,.08);color:#fff}
+
+  .hero{margin-bottom:20px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ochre);font-weight:600}
+  .hero h1{font-size:30px;line-height:1.22;letter-spacing:-.025em;margin:12px 0 14px;font-weight:800}
+  .oneliner{background:var(--blue);color:#eef2f5;padding:20px 22px;border-radius:var(--radius);font-size:15.5px;line-height:1.65;position:relative}
+  .oneliner::before{content:"핵심 한 줄";position:absolute;top:-9px;left:18px;background:var(--ochre);color:#2a1e08;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;padding:2px 8px;border-radius:4px;font-weight:700}
+  .oneliner b{color:#fff}
+  .updated{font-size:12px;color:var(--faint);margin-top:14px;font-family:var(--mono)}
+
+  section{margin-top:46px;scroll-margin-top:24px}
+  .sec-head{display:flex;align-items:baseline;gap:14px;border-bottom:1.5px solid var(--ink);padding-bottom:10px;margin-bottom:6px}
+  .sec-head .scode{font-family:var(--mono);font-size:12px;color:var(--blue-2);font-weight:600;flex:0 0 auto}
+  .sec-head h2{font-size:21px;letter-spacing:-.02em;margin:0;font-weight:800;flex:1 1 auto}
+  .sec-head .spct{font-family:var(--mono);font-size:11px;color:var(--muted);flex:0 0 auto}
+  .sec-bar{height:4px;border-radius:20px;background:var(--line-soft);overflow:hidden;margin-bottom:18px;display:flex}
+  .sec-bar>i{display:block;height:100%;width:0;transition:width .5s ease}
+  .sec-bar>i.g{background:var(--green)}.sec-bar>i.a{background:var(--ochre)}
+  .lead{color:var(--muted);font-size:14.5px;margin:0 0 16px;max-width:70ch}
+
+  ul.check{list-style:none;padding:0;margin:0}
+  ul.check li{display:flex;flex-wrap:wrap;gap:9px 12px;align-items:flex-start;padding:11px 14px;border:1px solid var(--line-soft);border-radius:9px;margin-bottom:8px;background:var(--surface);transition:background .15s,box-shadow .15s}
+  ul.check li:hover{border-color:var(--line)}
+  ul.check li.s-todo{box-shadow:inset 3px 0 0 transparent}
+  ul.check li.s-done{box-shadow:inset 3px 0 0 var(--green);background:var(--surface-2)}
+  ul.check li.s-doing{box-shadow:inset 3px 0 0 var(--ochre);background:#fdf7ea}
+  ul.check li.s-skip{box-shadow:inset 3px 0 0 var(--skip);opacity:.62}
+  ul.check .txt{flex:1 1 240px;min-width:190px;font-size:14.5px}
+  ul.check li.s-done .txt{color:var(--faint);text-decoration:line-through;text-decoration-color:var(--line)}
+  ul.check li.s-skip .txt{text-decoration:line-through;text-decoration-style:dotted;text-decoration-color:var(--faint)}
+  ul.check .txt small{display:block;color:var(--faint);font-size:12.5px;margin-top:3px;line-height:1.5;text-decoration:none}
+  ul.check .txt code{font-family:var(--mono);font-size:12px;background:var(--surface-2);padding:1px 5px;border-radius:4px}
+  .ctrls{display:flex;gap:7px;align-items:center;flex:0 0 auto;margin-left:auto}
+  .status{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:#fff}
+  .status button{border:none;background:#fff;font-family:var(--sans);font-size:11px;font-weight:600;padding:5px 9px;cursor:pointer;color:var(--muted);border-right:1px solid var(--line-soft)}
+  .status button:last-child{border-right:none}.status button:hover{background:var(--surface-2)}
+  .status button.on{color:#fff}
+  .status button[data-s=todo].on{background:var(--blue-2)}
+  .status button[data-s=doing].on{background:var(--ochre);color:#2a1e08}
+  .status button[data-s=done].on{background:var(--green)}
+  .status button[data-s=skip].on{background:var(--skip)}
+  .status button:focus-visible{outline:2px solid var(--ochre);outline-offset:-2px}
+  .memo-toggle{border:1px solid var(--line);background:#fff;color:var(--muted);font-family:var(--sans);font-size:11px;padding:5px 9px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .memo-toggle:hover{border-color:var(--blue-2);color:var(--blue-2)}
+  .memo-toggle.has{border-color:var(--ochre);color:#7a5313;background:var(--ochre-soft)}
+  .memo-wrap{flex-basis:100%;width:100%;display:none;margin-top:1px}
+  ul.check li.memo-open .memo-wrap{display:block}
+  .memo-wrap textarea{width:100%;min-height:52px;resize:vertical;border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-family:var(--sans);font-size:13px;line-height:1.55;background:#fffdf8;color:var(--ink)}
+  .memo-wrap textarea:focus{outline:none;border-color:var(--ochre);box-shadow:0 0 0 2px var(--ochre-soft)}
+  h3.subh{font-size:15px;font-weight:700;margin:26px 0 10px;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+  h3.subh::before{content:"";width:14px;height:2px;background:var(--ochre);border-radius:2px}
+  .funnel{display:flex;gap:0;margin:8px 0 20px;flex-wrap:wrap}
+  .fstage{flex:1 1 0;min-width:150px;background:var(--surface);border:1px solid var(--line-soft);border-radius:9px;padding:14px;margin-right:22px;position:relative}
+  .fstage:last-child{margin-right:0}
+  .fstage::after{content:"→";position:absolute;right:-17px;top:50%;transform:translateY(-50%);color:var(--blue-ghost);font-size:16px;font-weight:700}
+  .fstage:last-child::after{display:none}
+  .fstage .fn{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ochre);font-weight:700}
+  .fstage h4{margin:6px 0 8px;font-size:14.5px;letter-spacing:-.01em}
+  .fstage ul{list-style:none;padding:0;margin:0;font-size:12.5px;color:var(--muted);line-height:1.75}
+  .fstage li::before{content:"·";color:var(--blue-ghost);margin-right:5px;font-weight:700}
+  @media(max-width:820px){.fstage{flex:1 1 100%;margin:0 0 24px}.fstage::after{content:"↓";right:auto;left:50%;top:auto;bottom:-19px;transform:translateX(-50%)}}
+  .ref{border:1px solid var(--line);border-radius:10px;margin:12px 0 16px;overflow:hidden;background:var(--surface)}
+  .ref .rh{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface-2);border-bottom:1px solid var(--line-soft)}
+  .ref .rh .rc{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--blue-2);text-transform:uppercase;font-weight:600}
+  .ref .rh .rt{font-size:13px;font-weight:600}
+  .ref .rh button{margin-left:auto;font-family:var(--mono);font-size:10.5px;border:1px solid var(--line);background:#fff;color:var(--muted);padding:5px 11px;border-radius:6px;cursor:pointer}
+  .ref .rh button:hover{border-color:var(--blue-2);color:var(--blue-2)}
+  .ref .rh button.copied{background:var(--green-soft);border-color:var(--green);color:var(--green)}
+  .ref pre{margin:0;padding:14px 16px;font-family:var(--mono);font-size:12.5px;line-height:1.65;white-space:pre-wrap;word-break:break-word;color:#24262a;overflow-x:auto}
+  .callout{border-left:3px solid var(--ochre);background:var(--ochre-soft);padding:13px 16px;border-radius:0 8px 8px 0;font-size:13.5px;margin:14px 0;line-height:1.65}
+  .callout b{color:#7a5313}
+  .note-blue{border-left:3px solid var(--blue-2);background:#e9f0f5;padding:13px 16px;border-radius:0 8px 8px 0;font-size:13.5px;margin:14px 0;line-height:1.65}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+  @media(max-width:720px){.grid2{grid-template-columns:1fr}}
+  .card{border:1px solid var(--line-soft);border-radius:9px;padding:14px 16px;background:var(--surface)}
+  .card h4{margin:0 0 6px;font-size:14px;font-weight:700}
+  .card p{margin:0;font-size:13px;color:var(--muted);line-height:1.6}
+  .card .k{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--ochre);text-transform:uppercase;font-weight:600;display:block;margin-bottom:6px}
+  .tagp{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;padding:2px 7px;border-radius:20px;background:var(--ochre-soft);color:#7a5313;margin-right:6px;vertical-align:1.5px;font-weight:600;text-transform:uppercase}
+  .tagp.ax{background:#e0ebf2;color:#1d4c6b}.tagp.now{background:var(--ochre);color:#2a1e08}
+  ol.steps{margin:10px 0;padding-left:20px;font-size:13.5px;line-height:1.7}
+  ol.steps li{margin-bottom:5px}
+  .cfg-overlay{display:none;position:fixed;inset:0;background:rgba(10,16,24,.55);z-index:80;align-items:center;justify-content:center;padding:20px}
+  .cfg-overlay.show{display:flex}
+  .cfg-card{background:var(--surface);color:var(--ink);border-radius:14px;max-width:470px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+  .cfg-card h3{margin:0 0 4px;font-size:17px}
+  .cfg-card p{margin:0 0 6px;font-size:12.5px;color:var(--muted);line-height:1.55}
+  .cfg-card label{display:block;font-size:12px;font-weight:600;margin:12px 0 5px}
+  .cfg-card input{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-family:var(--mono);font-size:12.5px;background:#fff;color:var(--ink)}
+  .cfg-card input:focus{outline:none;border-color:var(--blue-2);box-shadow:0 0 0 2px #e9f0f5}
+  .cfg-status{font-size:12px;margin-top:10px;min-height:16px}
+  .cfg-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+  .cfg-row button{flex:1;border:none;border-radius:8px;padding:10px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer}
+  .btn-primary{background:var(--blue);color:#fff}
+  .btn-ghost{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+  .menubtn{display:none}
+  @media(max-width:900px){
+    .wrap{flex-direction:column}
+    .sidebar{position:fixed;left:0;top:0;transform:translateX(-100%);transition:transform .28s ease;z-index:50;width:270px;flex-basis:270px;box-shadow:6px 0 30px rgba(0,0,0,.25)}
+    .sidebar.open{transform:translateX(0)}
+    .main{padding:70px 20px 100px;max-width:100%}
+    .menubtn{display:flex;align-items:center;gap:8px;position:fixed;top:14px;left:14px;z-index:60;background:var(--blue);color:#fff;border:none;padding:10px 14px;border-radius:8px;font-family:var(--mono);font-size:12px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.2)}
+    .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:40}
+    .scrim.show{display:block}
+    .sec-head h2{font-size:18px}.hero h1{font-size:24px}.ctrls{margin-left:0}
+  }
+  @media print{.sidebar,.menubtn,.ref .rh button,.side-foot,.ctrls{display:none!important}.main{max-width:100%;padding:0}ul.check li{break-inside:avoid}}
+</style>
+</head>
+<body>
+<button class="menubtn" onclick="toggleNav()">☰ 목차</button>
+<div class="scrim" id="scrim" onclick="toggleNav()"></div>
+
+<div class="wrap">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">Arkireal 실행 대시보드<small>AX · SALES · MKT · NAS</small></div>
+    <div class="prog-overall">
+      <div class="lab"><span>전체 진행률</span><span id="ovCount">0 / 0</span></div>
+      <div class="bar"><i class="g" id="ovBarG"></i><i class="a" id="ovBarA"></i></div>
+      <div class="big"><span id="ovPct">0</span><span>% 완료</span></div>
+    </div>
+    <div class="legend"><span><i class="d done"></i>완료</span><span><i class="d doing"></i>진행중</span><span><i class="d skip"></i>불필요</span></div>
+    <nav id="nav">
+      <div class="navgroup">전략</div>
+      <a class="navlink" href="#s-funnel"><span class="code">S-1</span>권위 기반 퍼널<span class="tick"></span></a>
+      <a class="navlink" href="#s-position"><span class="code">S-2</span>포지셔닝<span class="tick"></span></a>
+      <div class="navgroup">이번 주</div>
+      <a class="navlink" href="#s-now"><span class="code">W-0</span>바로 할 일<span class="tick"></span></a>
+      <a class="navlink" href="#s-diag"><span class="code">W-1</span>진단 상품화<span class="tick"></span></a>
+      <div class="navgroup">영업 · AX</div>
+      <a class="navlink" href="#s-sales"><span class="code">B-1</span>영업 자료 3종<span class="tick"></span></a>
+      <a class="navlink" href="#s-ax"><span class="code">AX</span>AX 자동화<span class="tick"></span></a>
+      <a class="navlink" href="#s-web"><span class="code">W-2</span>홈페이지 개선<span class="tick"></span></a>
+      <a class="navlink" href="#s-proj"><span class="code">P-1</span>대표 프로젝트 5<span class="tick"></span></a>
+      <div class="navgroup">마케팅</div>
+      <a class="navlink" href="#s-mkt"><span class="code">M-1</span>콘텐츠·유튜브·광고<span class="tick"></span></a>
+      <div class="navgroup">데이터</div>
+      <a class="navlink" href="#s-nas"><span class="code">N-1</span>NAS 라벨링<span class="tick"></span></a>
+      <div class="navgroup">참조</div>
+      <a class="navlink" href="#s-copy"><span class="code">REF</span>핵심 문구 모음</a>
+      <a class="navlink" href="#s-road"><span class="code">R-1</span>단계별 로드맵<span class="tick"></span></a>
+      <a class="navlink" href="#s-use"><span class="code">?</span>사용법 · 시트 연결</a>
+    </nav>
+    <div class="side-foot">
+      <div class="syncpill" id="syncPill"><i></i><span id="syncText">로컬 저장</span></div>
+      상태·메모가 저장되는 위치입니다.
+      <div class="fbtns"><button onclick="openCfg()">⚙ 시트 연결</button><button onclick="resetAll()">전체 초기화</button></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="hero">
+      <div class="eyebrow">Execution Dashboard · 2026-07-03</div>
+      <h1>아키리얼 AX·영업·마케팅·NAS<br>실행 대시보드</h1>
+      <div class="oneliner">NAS 2TB를 먼저 정리하지 않는다. 먼저 할 일은 <b>고객이 들어올 이유(진단 상품)</b>를 만들고, 문의가 오면 <b>AI가 상담 브리핑·후속 메시지를 자동 생성</b>하고, <b>대표 프로젝트 5개를 영업 사례로</b> 바꾸는 것. 대표님의 <b>저서·유튜브·방송</b>이 상담 전에 고객을 데워 놓게 만들면 상담은 '설득'이 아니라 '확정'이 된다.</div>
+      <div class="updated">기준 문서: arkireal_ax_sales_marketing_nas_strategy_2026-07-03.md · 홈페이지 분석 반영</div>
+    </div>
+
+    <section id="s-funnel" data-sec="funnel">
+      <div class="sec-head"><span class="scode">S-1</span><h2>권위 기반 인바운드 퍼널</h2><span class="spct" id="pct-funnel"></span></div>
+      <div class="sec-bar"><i class="g" id="barg-funnel"></i><i class="a" id="bara-funnel"></i></div>
+      <p class="lead">대표님은 이미 상담 없이 신뢰를 만드는 자산(저서·유튜브·방송·칼럼)을 갖고 있습니다. 이걸 퍼널로 연결하면, 진성 고객이 <b>이미 알고·신뢰하고·공부하고·래포를 쌓은 상태</b>로 도착합니다. 목표는 상담 건수를 늘리는 게 아니라, <b>데워진 고객만 상담에 도달</b>시켜 대표님의 시간 투입을 최소화하는 것입니다.</p>
+      <div class="funnel">
+        <div class="fstage"><div class="fn">STAGE 1</div><h4>인지</h4><ul><li>저서 「집짓기 진실」</li><li>유튜브 밈건축가</li><li>방송 tvN·KBS2</li><li>칼럼·강연</li></ul></div>
+        <div class="fstage"><div class="fn">STAGE 2</div><h4>교육·자기선별</h4><ul><li>문제해결 콘텐츠</li><li>무료 진단 상품</li><li>"내 문제가 뭔지 알겠다"</li></ul></div>
+        <div class="fstage"><div class="fn">STAGE 3</div><h4>래포</h4><ul><li>진단 결과 리포트</li><li>후속 메시지</li><li>"내 케이스를 이해한다"</li></ul></div>
+        <div class="fstage"><div class="fn">STAGE 4</div><h4>상담</h4><ul><li>데워진 고객만 도착</li><li>대표 시간 최소</li><li>설득 → 확정</li></ul></div>
+        <div class="fstage"><div class="fn">STAGE 5</div><h4>계약</h4><ul><li>제안서 발송</li><li>설계·시공 진행</li></ul></div>
+      </div>
+      <div class="callout"><b>핵심 전환 원리:</b> 각 단계의 끝에는 반드시 "다음 단계로 가는 버튼"이 있어야 합니다. 유튜브 설명란 → 무료 진단 링크, 블로그 글 마지막 → 해당 진단 신청, 진단 리포트 끝 → 상담 예약. 콘텐츠가 영업을 대신하게 만드는 게 자동화의 출발점입니다.</div>
+      <h3 class="subh">실행 체크리스트</h3>
+      <ul class="check" data-sec="funnel">
+        <li data-id="fn1"><span class="txt">기존 콘텐츠 자산 목록화 <small>유튜브 영상·저서 챕터·방송 클립·칼럼을 표로 정리하고, 각각을 퍼널 5단계 중 어디에 쓸지 매핑</small></span></li>
+        <li data-id="fn2"><span class="txt">유튜브 영상 설명란에 무료 진단 링크 삽입 <small>인기 영상 상위 10개부터. "이 영상 보고 궁금하면 → 무료 부지/도면 검토 신청"</small></span></li>
+        <li data-id="fn3"><span class="txt">저서 구매자 → 상담 연결 경로 만들기 <small>책 안내 페이지 또는 QR로 무료 진단 유입 (독자는 이미 최상위 진성 고객)</small></span></li>
+        <li data-id="fn4"><span class="txt">"상담 전 필독/필시청" 큐레이션 페이지 <small>대표 영상 3개 + 글 3개를 묶어 "상담 전 이것부터 보세요" 코너 → 래포를 상담 전에 완성</small></span></li>
+        <li data-id="fn5"><span class="txt">각 진단 리포트 마지막에 상담 예약 CTA 고정 <small>진단 → 상담 전환 지점 표준화</small></span></li>
+        <li data-id="fn6"><span class="txt">퍼널 지표 정의 <small>영상 조회 → 진단 신청 → 상담 → 계약 각 전환율을 측정할 최소 지표 4개 확정</small></span></li>
+      </ul>
+    </section>
+
+    <section id="s-position" data-sec="position">
+      <div class="sec-head"><span class="scode">S-2</span><h2>포지셔닝 통일</h2><span class="spct" id="pct-position"></span></div>
+      <div class="sec-bar"><i class="g" id="barg-position"></i><i class="a" id="bara-position"></i></div>
+      <p class="lead">"예쁜 단독주택 짓는 회사"로 가면 무면허·소규모 시공사와 평당가 비교에서 구조적으로 불리합니다. 강점은 통합 역량입니다.</p>
+      <div class="note-blue"><b>확정 포지셔닝:</b> 대지·사업성·디자인·자재·견적·시공·브랜딩을 연결하는 <b>소형 수익형 건축 전문 디자인빌드 종합건설사</b>. 차별점 한 문장: <b>"자재사양서와 자재배치도를 견적 전에 만들고, 그걸 바탕으로 견적을 내는 회사"</b> → 실제 공사 중 변경·추가금을 줄인다.</div>
+      <ul class="check" data-sec="position">
+        <li data-id="po1"><span class="txt">홈페이지·소개서·제안서·광고의 한 줄 소개 문구 통일 <small>모든 채널에서 같은 포지셔닝 문장을 쓴다</small></span></li>
+        <li data-id="po2"><span class="txt">타겟 확장 반영 <small>단독주택 → 상가주택·근생·카페·스테이·세컨하우스·수익형·도면 보유 시공 의뢰로 메시지 확장</small></span></li>
+        <li data-id="po3"><span class="txt">"견적 전 자재·마감 정리" 차별점을 전 채널 핵심 메시지로 승격 <small>홈페이지엔 이미 반영됨 → 소개서·광고·상담에도 동일하게</small></span></li>
+      </ul>
+    </section>
+
+    <section id="s-now" data-sec="now">
+      <div class="sec-head"><span class="scode">W-0</span><h2>이번 주 바로 할 일</h2><span class="spct" id="pct-now"></span></div>
+      <div class="sec-bar"><i class="g" id="barg-now"></i><i class="a" id="bara-now"></i></div>
+      <p class="lead">사이트 구조를 바꿀 필요 없이 지금 있는 폼 위에 "상품 레이어"만 얹으면 됩니다. 매출에 가장 가까운 순서입니다.</p>
+      <ul class="check" data-sec="now">
+        <li data-id="nw1"><span class="txt"><span class="tagp now">우선</span>고객 유형 5개 확정 <small>부지 보유형 / 수익형(상가주택·근생) / 카페·스테이 창업 / 도면 보유 시공 의뢰 / 전원주택·세컨하우스</small></span></li>
+        <li data-id="nw2"><span class="txt"><span class="tagp now">우선</span>무료 진단 상품명 확정 <small>부지 1차 검토 · 도면 기반 견적 전 점검 · 수익형 건축 1차 검토 (세컨·스테이 컨셉 진단은 2차)</small></span></li>
+        <li data-id="nw3"><span class="txt">문의 폼 재설계(조건부) <small>현재 단계 선택에 따라 추가 질문 노출 · 아래 AX 섹션 참조</small></span></li>
+        <li data-id="nw4"><span class="txt">1페이지 회사 소개서 작성 <small>홈페이지보다 먼저 필요한 영업 무기</small></span></li>
+        <li data-id="nw5"><span class="txt">AI 상담 브리핑 양식 만들기 <small>아래 AX 섹션의 프롬프트 템플릿 사용</small></span></li>
+        <li data-id="nw6"><span class="txt">상담 후속 메시지 템플릿 4종 세팅 <small>부지/도면/수익형/세컨 — 참조 섹션에 초안 있음</small></span></li>
+      </ul>
+    </section>
+
+    <section id="s-diag" data-sec="diag">
+      <div class="sec-head"><span class="scode">W-1</span><h2>진단 상품화</h2><span class="spct" id="pct-diag"></span></div>
+      <div class="sec-bar"><i class="g" id="barg-diag"></i><i class="a" id="bara-diag"></i></div>
+      <p class="lead">"건축 상담 문의" 대신 "내 땅/도면/예산으로 가능한 방향을 먼저 진단해드립니다"로 진입 장벽을 낮춥니다. 지금 당장 계약 준비가 안 된 고객도 문의할 이유가 생깁니다.</p>
+      <div class="grid2">
+        <div class="card"><span class="k">진단 1</span><h4>부지 1차 검토 리포트</h4><p>땅은 있는데 뭘 지을지 모르는 고객. 건축 가능 방향·수익형 가능성·리스크 체크.</p></div>
+        <div class="card"><span class="k">진단 2</span><h4>상가주택·근생 수익성 1차 검토</h4><p>임대·운영 수익 기대 고객. 용도·공사비 감각·사업성 체크포인트.</p></div>
+        <div class="card"><span class="k">진단 3</span><h4>도면 기반 시공 견적 전 점검</h4><p>도면은 있는데 견적이 불안한 고객. 빠진 마감·자재·공사 범위 확인.</p></div>
+        <div class="card"><span class="k">진단 4</span><h4>세컨하우스·스테이 컨셉 진단</h4><p>부지·예산 기준 컨셉·운영 동선·브랜딩 방향 제안.</p></div>
+      </div>
+      <ul class="check" data-sec="diag">
+        <li data-id="dg1"><span class="txt">진단 상품별 "제공 가치 + 고객에게 보이는 문구" 확정 <small>참조 섹션의 광고/문구 모음 활용</small></span></li>
+        <li data-id="dg2"><span class="txt">진단별 내부 접수 항목 정의 <small>부지: 위치·면적·지목·용도·접도·희망용도·예산·자료·일정</small></span></li>
+        <li data-id="dg3"><span class="txt">홈 히어로 아래 유형별 진입 카드 3개 배치 <small>"땅은 있는데" / "도면은 있는데" / "사업성부터" → 각 진단 신청 연결</small></span></li>
+        <li data-id="dg4"><span class="txt">진단 결과 리포트 1페이지 템플릿 제작 <small>진단→상담 전환의 핵심 문서. 마지막에 상담 예약 CTA</small></span></li>
+        <li data-id="dg5"><span class="txt">진단 3종부터 오픈 · 세컨/스테이는 2차 <small>과하게 벌리지 말고 3개로 시작</small></span></li>
+      </ul>
+    </section>
+
+    <section id="s-sales" data-sec="sales">
+      <div class="sec-head"><span class="scode">B-1</span><h2>영업 자료 3종 세트</h2><span class="spct" id="pct-sales"></span></div>
+      <div class="sec-bar"><i class="g" id="barg-sales"></i><i class="a" id="bara-sales"></i></div>
+      <p class="lead">홈페이지보다 먼저 필요한 3가지: ① 1페이지 회사 소개서 ② 고객 유형별 제안서 템플릿 ③ 상담 후 후속 메시지.</p>
+      <h3 class="subh">1페이지 회사 소개서</h3>
+      <div class="ref">
+        <div class="rh"><span class="rc">OUTLINE</span><span class="rt">회사 소개서 구성</span><button onclick="copyRef(this)">복사</button></div>
+        <pre>[타이틀] 설계부터 시공, 자재, 견적, 브랜딩까지 한 팀이 끝까지 맡는 디자인빌드 종합건설사
+
+[핵심 메시지]
+Arkireal은 단순 시공사가 아니라, 대지 검토부터 설계·3D/VR·자재 사양·견적 준비·시공·완공 후 브랜딩까지 연결하는 디자인빌드 종합건설사입니다.
+
+[역량] 종합건설 면허 · 설계 · 3D · VR · BIM · 드론 · 시공 · 디자인 감리
+[신뢰] 방송 출연 · 「집짓기 진실」 저자 · 하자이행보증 · 시공 전 과정 공개
+[대표 프로젝트] (수익형/카페/스테이/세컨 각 1)
+[맞는 고객] 부지 보유 · 수익형 · 도면 보유 시공 · 세컨/스테이
+[프로세스] 진단 → 상담 → 자재/견적 정리 → 계약 → 시공 → 완공/브랜딩
+[무료 진단 안내] + 상담 신청 CTA</pre>
+      </div>
+      <h3 class="subh">고객 유형별 제안서 (5종)</h3>
+      <ul class="check" data-sec="sales">
+        <li data-id="sl1"><span class="txt">유형 1 · 부지 보유 고객용 <small>부지 현황·가능 용도·예상 방향·리스크·다음 단계</small></span></li>
+        <li data-id="sl2"><span class="txt">유형 2 · 상가주택/근생 수익형용 <small>용도 검토·임대/운영·공사비 감각·사업성 체크포인트</small></span></li>
+        <li data-id="sl3"><span class="txt">유형 3 · 카페/스테이 창업용 <small>공간 컨셉·운영 동선·고객 경험·브랜딩·건축+인테리어 통합</small></span></li>
+        <li data-id="sl4"><span class="txt">유형 4 · 도면 보유 시공 의뢰용 <small>보유 도면 검토·누락 항목·자재/마감 리스크·시공사 선정 체크</small></span></li>
+        <li data-id="sl5"><span class="txt">유형 5 · 전원주택/세컨하우스용 <small>라이프스타일·예산·공간 구성·마감·관리 비용</small></span></li>
+        <li data-id="sl6"><span class="txt"><span class="tagp">회사소개</span>1페이지 회사 소개서 PDF 완성</span></li>
+        <li data-id="sl7"><span class="txt">후속 메시지 4종 확정 및 카카오/문자/이메일 세팅 <small>참조 섹션 초안 사용</small></span></li>
+      </ul>
+    </section>
+
+    <section id="s-ax" data-sec="ax">
+      <div class="sec-head"><span class="scode">AX</span><h2>AX 자동화 — 문의 이후의 흐름</h2><span class="spct" id="pct-ax"></span></div>
+      <div class="sec-bar"><i class="g" id="barg-ax"></i><i class="a" id="bara-ax"></i></div>
+      <p class="lead">가장 빠른 ROI 지점입니다. 문의가 오면 AI가 자동으로 <b>1페이지 상담 브리핑</b>을 작성해, 상담 전에 고객 유형·계약 가능성·추가 질문·후속 메시지 초안을 준비합니다. 거창한 시스템 없이, 폼 → 스프레드시트/메일 → 프롬프트로 시작할 수 있습니다.</p>
+      <h3 class="subh">① 문의 폼 조건부 재설계</h3>
+      <ul class="check" data-sec="ax">
+        <li data-id="ax1"><span class="txt"><span class="tagp ax">폼</span>기본 정보 + 상담 희망 지역/방식(전화·방문·온라인) 수집</span></li>
+        <li data-id="ax2"><span class="txt"><span class="tagp ax">폼</span>"현재 단계" 선택에 따른 조건부 질문 <small>부지 보유→면적·지번·용도 / 도면 보유→도면·견적서 파일 업로드 / 수익형→운영 목적</small></span></li>
+        <li data-id="ax3"><span class="txt"><span class="tagp ax">폼</span>파일 업로드 필드 추가 <small>도면 보유 고객이 파일을 못 올리는 게 현재 가장 아쉬운 지점</small></span></li>
+        <li data-id="ax4"><span class="txt"><span class="tagp ax">폼</span>예산·자료 보유·고민 선택지 추가 <small>문의 순간부터 고객 유형이 자동 분류되도록</small></span></li>
+      </ul>
+      <h3 class="subh">② 상담 브리핑 자동화</h3>
+      <div class="ref">
+        <div class="rh"><span class="rc">PROMPT</span><span class="rt">상담 브리핑 생성 프롬프트 (폼 데이터 넣고 실행)</span><button onclick="copyRef(this)">복사</button></div>
+        <pre>너는 아키리얼 종합건설(디자인빌드 종합건설사)의 영업 어시스턴트다.
+아래 문의 폼 데이터를 읽고, 상담자가 통화·미팅 전에 볼 1페이지 상담 브리핑을 작성하라.
+
+[문의 데이터]
+{여기에 폼 응답 붙여넣기}
+
+[출력 형식]
+## 1. 고객 기본 정보 (요약)
+## 2. 고객 유형 분류
+- 유형: 부지보유형 / 수익형 / 도면보유 시공의뢰 / 세컨하우스 / 스테이·카페 / 기타
+- 계약 가능성: 높음 / 중간 / 낮음 (근거 1줄)
+- 예상 객단가: 상 / 중 / 하
+## 3. 고객의 핵심 고민 (1~2줄)
+## 4. 상담 시 확인할 질문 3가지
+## 5. 제안 방향
+## 6. 리스크 및 주의점
+## 7. 상담 후 후속 메시지 초안 (바로 보낼 수 있게)
+## 8. 필요한 추가 자료 요청 목록
+
+규칙: 과장 없이, 상담자가 바로 쓸 수 있는 실무 언어로. 근거 없는 추측은 '확인 필요'로 표기.</pre>
+      </div>
+      <ul class="check" data-sec="ax">
+        <li data-id="ax5"><span class="txt"><span class="tagp ax">AI</span>폼 응답이 스프레드시트/메일로 모이는 경로 구성</span></li>
+        <li data-id="ax6"><span class="txt"><span class="tagp ax">AI</span>위 프롬프트로 브리핑 자동 생성 흐름 테스트 <small>실제 문의 3건으로 검증</small></span></li>
+        <li data-id="ax7"><span class="txt"><span class="tagp ax">AI</span>후속 메시지 초안이 브리핑에 함께 나오게 <small>상담 당일 안에 "문의→준비→상담→후속" 한 바퀴</small></span></li>
+        <li data-id="ax8"><span class="txt"><span class="tagp ax">AI</span>상담 후 제안서 초안 자동 생성으로 확장 <small>유형별 제안서 템플릿 + 브리핑 → 제안서 초안</small></span></li>
+      </ul>
+      <div class="callout"><b>혼자 다 하는 부담을 줄이는 원리:</b> 콘텐츠(유튜브·저서)가 <b>인지·래포</b>를 대신하고, AI 브리핑이 <b>상담 준비·후속·제안서 초안</b>을 대신합니다. 대표님은 이미 데워진 고객과의 "확정 대화"에만 시간을 씁니다.</div>
+    </section>
+
+    <section id="s-web" data-sec="web">
+      <div class="sec-head"><span class="scode">W-2</span><h2>홈페이지 개선</h2><span class="spct" id="pct-web"></span></div>
+      <div class="sec-bar"><i class="g" id="barg-web"></i><i class="a" id="bara-web"></i></div>
+      <p class="lead">리뉴얼은 이미 잘 되어 있습니다(포지셔닝 메시지, 견적 전 자재 정리 문구, 신뢰 요소, 1차 문의 폼). 지금 필요한 건 "진단 상품 + 유형 분기 + 문의 이후 흐름"입니다.</p>
+      <ul class="check" data-sec="web">
+        <li data-id="wb1"><span class="txt">CTA를 "상담 문의" 단일 → 진단 상품 3개로 분리</span></li>
+        <li data-id="wb2"><span class="txt">고객 유형별 진입 경로 6개 배치 <small>땅만/땅없이/도면보유/수익형/카페·스테이/전원·세컨</small></span></li>
+        <li data-id="wb3"><span class="txt">문의 폼에 대지 면적·접도·파일 업로드·고민 선택지 추가 <small>AX 섹션과 동일</small></span></li>
+        <li data-id="wb4"><span class="txt">"상담 전 필독/필시청" 큐레이션 코너 추가 <small>퍼널 래포 완성 지점</small></span></li>
+        <li data-id="wb5"><span class="txt">구 워드프레스 색인 정리 <small>구글에 예전 테마 기본 텍스트(lorem ipsum·브루클린 주소)가 노출 중 → 리다이렉트/색인 삭제 요청</small></span></li>
+      </ul>
+    </section>
+
+    <section id="s-proj" data-sec="proj">
+      <div class="sec-head"><span class="scode">P-1</span><h2>대표 프로젝트 5개 영업 사례화</h2><span class="spct" id="pct-proj"></span></div>
+      <div class="sec-bar"><i class="g" id="barg-proj"></i><i class="a" id="bara-proj"></i></div>
+      <p class="lead">33개 전체를 한 번에 바꾸지 않습니다. 매출 타겟(수익형·카페·스테이·세컨)을 모두 커버하는 5개만 골라 <b>포트폴리오 → 영업 사례집</b>으로 바꿉니다.</p>
+      <div class="note-blue"><b>추천 조합:</b> 향동 아치리얼(상가주택) · 담화재 스테이(숙박) · 카페 프로젝트 1 · 스테이/풀빌라 1 · 세컨하우스 1. 각 페이지에 <b>건축주 고민 → 부지 조건 → 해결 방식 → 사용 자재 → 비슷한 고민이 있다면</b> 구조 추가 후, 하단 CTA를 해당 유형의 진단 상품으로 연결.</div>
+      <ul class="check" data-sec="proj">
+        <li data-id="pj1"><span class="txt">대표 5개 확정 <small>사진 퀄리티·강점 노출·매출 타겟 연결 기준</small></span></li>
+        <li data-id="pj2"><span class="txt">사례 템플릿으로 5개 페이지 재작성 <small>개요·건축주 고민·부지 조건·해결 방향·설계/자재/시공 포인트·3D/VR/드론·결과·비슷한 고객 메시지</small></span></li>
+        <li data-id="pj3"><span class="txt">각 페이지 하단 CTA를 유형별 진단으로 연결</span></li>
+        <li data-id="pj4"><span class="txt">3D 이미지 vs 실제 완공 비교 컷 추가 <small>"영상과 결과가 일치한다"는 강점 시각화</small></span></li>
+      </ul>
+    </section>
+
+    <section id="s-mkt" data-sec="mkt">
+      <div class="sec-head"><span class="scode">M-1</span><h2>마케팅 · 유튜브 · 광고</h2><span class="spct" id="pct-mkt"></span></div>
+      <div class="sec-bar"><i class="g" id="barg-mkt"></i><i class="a" id="bara-mkt"></i></div>
+      <p class="lead">"예쁜 집 완공" 콘텐츠보다 "고객이 실제로 검색하는 고민"을 제목으로 잡습니다. 모든 콘텐츠의 결론은 해당 진단 상품 신청으로 연결됩니다.</p>
+      <h3 class="subh">블로그 · SEO (우선 5개부터)</h3>
+      <ul class="check" data-sec="mkt">
+        <li data-id="mk1"><span class="txt">"도면은 있는데 견적이 계속 달라지는 이유" → 도면 진단 연결</span></li>
+        <li data-id="mk2"><span class="txt">"상가주택 지을 때 처음부터 망하는 예산 구조" → 수익형 진단</span></li>
+        <li data-id="mk3"><span class="txt">"땅은 있는데 뭘 지어야 할지 모를 때 보는 5가지" → 부지 진단</span></li>
+        <li data-id="mk4"><span class="txt">"자재사양서 없이 시공 계약하면 생기는 문제" → 차별점 강조</span></li>
+        <li data-id="mk5"><span class="txt">"스테이 사업에서 건축비보다 중요한 운영 동선" → 컨셉 진단</span></li>
+      </ul>
+      <h3 class="subh">유튜브 · 편집 방향</h3>
+      <ul class="check" data-sec="mkt">
+        <li data-id="mk6"><span class="txt">기존 인기 영상 → 진단 상품 연결 오버레이/설명란 정비 <small>새 영상 제작보다 기존 자산 재활용이 먼저</small></span></li>
+        <li data-id="mk7"><span class="txt">완공 영상/현장 영상 → 짧은 클립(쇼츠·릴스)으로 재편집 <small>NAS 대표 프로젝트 영상 활용</small></span></li>
+        <li data-id="mk8"><span class="txt">"고민 해결형" 신규 영상 주제 5개 확정 <small>블로그 주제와 동일 축으로</small></span></li>
+      </ul>
+      <h3 class="subh">광고 소액 테스트</h3>
+      <ul class="check" data-sec="mkt">
+        <li data-id="mk9"><span class="txt">네이버/메타 광고 4소재 세팅 <small>부지·수익형·도면·세컨 (참조 섹션에 카피 있음)</small></span></li>
+        <li data-id="mk10"><span class="txt">광고 도착 페이지 = 일반 문의가 아닌 진단 신청 페이지 <small>전환이 측정 가능해야 함</small></span></li>
+        <li data-id="mk11"><span class="txt">소액 테스트 → 전환 단가로 소재별 판단</span></li>
+      </ul>
+    </section>
+
+    <section id="s-nas" data-sec="nas">
+      <div class="sec-head"><span class="scode">N-1</span><h2>NAS 라벨링 (흐름에 종속시켜 시작)</h2><span class="spct" id="pct-nas"></span></div>
+      <div class="sec-bar"><i class="g" id="barg-nas"></i><i class="a" id="bara-nas"></i></div>
+      <p class="lead">2TB 전체를 AI에 통째로 먹이지 않습니다. 원본은 NAS에 두고, AI는 <b>파일의 지도(index)</b>를 먼저 읽습니다. 그리고 라벨링을 별도 프로젝트가 아니라 <b>위 작업(사례 페이지·제안서)의 재료 공급용</b>으로 먼저 돌립니다.</p>
+      <div class="callout"><b>순서:</b> 구글드라이브는 <b>백업</b> 용도로만 OK. Codex/Claude는 통째 읽기가 아니라 <b>라벨링 파이프라인 제작</b> 용도. 실제 시작은 <b>대표 프로젝트 5개의 자재시트·자재배치도·대표 완공사진</b>만 선별 인덱싱.</div>
+      <ul class="check" data-sec="nas">
+        <li data-id="ns1"><span class="txt">2TB 구글드라이브 백업 시작(백업 목적 한정)</span></li>
+        <li data-id="ns2"><span class="txt">NAS 전체 파일 목록(인덱스)만 먼저 생성 <small>경로·파일명·확장자·크기·수정일·상위폴더</small></span></li>
+        <li data-id="ns3"><span class="txt">폴더/파일명 기반 1차 자동 분류표 <small>AI가 내용을 읽기 전에 이름만으로 카테고리 분류</small></span></li>
+        <li data-id="ns4"><span class="txt">대표 프로젝트 5개만 샘플 라벨링(PoC)</span></li>
+        <li data-id="ns5"><span class="txt"><code>arkireal-data-indexer</code> 레포 생성 <small>scan_files · classify_paths · extract_excel/pdf · thumbnails</small></span></li>
+        <li data-id="ns6"><span class="txt">자재시트·자재배치도·완공사진 대표컷부터 DB화 <small>영상 전체 라벨링은 비추천, 색인만</small></span></li>
+      </ul>
+    </section>
+
+    <section id="s-copy">
+      <div class="sec-head"><span class="scode">REF</span><h2>핵심 문구 · 템플릿 모음</h2></div>
+      <p class="lead">상담·후속·광고에서 바로 복사해 쓰는 참조 블록입니다.</p>
+      <div class="ref"><div class="rh"><span class="rc">FOLLOW-UP</span><span class="rt">후속 메시지 · 부지 보유 고객</span><button onclick="copyRef(this)">복사</button></div>
+        <pre>오늘 상담 기준으로 보면 고객님 케이스는 "부지 보유형 건축 가능성 검토"에 가깝습니다.
+다음 단계에서는 토지 조건, 도로 접도, 가능 용도, 예상 규모, 예산 범위를 먼저 확인하는 것이 좋습니다.
+토지 주소 또는 지번, 대략적인 희망 용도와 예산을 알려주시면 1차 방향을 정리해드리겠습니다.</pre></div>
+      <div class="ref"><div class="rh"><span class="rc">FOLLOW-UP</span><span class="rt">후속 메시지 · 도면 보유 고객</span><button onclick="copyRef(this)">복사</button></div>
+        <pre>오늘 상담 기준으로 보면 고객님 케이스는 "도면 보유 시공 검토"에 가깝습니다.
+이 경우 단순 평당가 비교보다, 도면에 빠진 마감·자재·공사 범위가 있는지 먼저 확인하는 것이 중요합니다.
+도면과 현재 받은 견적 자료를 보내주시면 Arkireal에서 견적 전 리스크와 추가 확인이 필요한 항목을 먼저 정리해드리겠습니다.</pre></div>
+      <div class="ref"><div class="rh"><span class="rc">FOLLOW-UP</span><span class="rt">후속 메시지 · 수익형 건축 고객</span><button onclick="copyRef(this)">복사</button></div>
+        <pre>오늘 상담 기준으로 보면 고객님 케이스는 "수익형 건축 검토"에 가깝습니다.
+상가주택, 근생, 카페, 스테이 같은 수익형 건축은 디자인뿐 아니라 용도, 운영 동선, 임대 가능성, 공사비 구조를 함께 봐야 합니다.
+부지 정보와 희망 운영 방향을 보내주시면 Arkireal에서 사업성 검토에 필요한 핵심 체크포인트를 먼저 정리해드리겠습니다.</pre></div>
+      <div class="ref"><div class="rh"><span class="rc">FOLLOW-UP</span><span class="rt">후속 메시지 · 세컨하우스/스테이 고객</span><button onclick="copyRef(this)">복사</button></div>
+        <pre>오늘 상담 기준으로 보면 고객님 케이스는 "세컨하우스·스테이 컨셉 검토"에 가깝습니다.
+이 경우 예쁜 공간보다 먼저 부지·예산·운영 동선을 함께 봐야 합니다.
+부지 정보와 희망 운영 방향(숙박/개인용/혼합)을 보내주시면 공간 컨셉과 건축 방향을 1차로 정리해드리겠습니다.</pre></div>
+      <h3 class="subh">광고 소재</h3>
+      <div class="ref"><div class="rh"><span class="rc">AD</span><span class="rt">광고 4종</span><button onclick="copyRef(this)">복사</button></div>
+        <pre>[부지] 땅은 있는데 무엇을 지을지 고민 중이신가요?
+부지 조건과 예산 기준으로 건축 가능 방향을 1차 검토해드립니다. — Arkireal 부지 1차 검토
+
+[수익형] 상가주택·근생 건축 전, 사업성부터 검토하세요.
+설계·시공 전에 용도, 규모, 예산 리스크를 먼저 확인합니다. — Arkireal 수익형 건축 1차 검토
+
+[도면] 도면은 있는데 시공 견적이 불안하다면
+마감·자재·공사 범위 누락 여부를 먼저 점검해드립니다. — Arkireal 도면 기반 시공 검토
+
+[세컨/스테이] 세컨하우스·스테이 건축을 고민 중이신가요?
+예쁜 건물보다 먼저 부지·예산·운영 동선을 함께 봐야 합니다. — Arkireal 컨셉 1차 진단</pre></div>
+      <h3 class="subh">소개 문구</h3>
+      <div class="ref"><div class="rh"><span class="rc">TAGLINE</span><span class="rt">Arkireal 소개 · 진단 문구</span><button onclick="copyRef(this)">복사</button></div>
+        <pre>Arkireal은 설계부터 시공, 자재, 견적, 브랜딩까지 한 팀이 끝까지 맡는 디자인빌드 종합건설사입니다.
+
+내 땅/도면/예산으로 가능한 방향을 먼저 진단해드립니다.
+건축 상담 전에, 먼저 가능한 방향과 리스크를 확인하세요.
+
+건축도면만으로 견적을 내면 실제 공사 중 변경과 추가금이 생길 수 있습니다.
+Arkireal은 자재사양서와 자재배치도를 함께 검토해 견적 전 리스크를 줄입니다.</pre></div>
+    </section>
+
+    <section id="s-road" data-sec="road">
+      <div class="sec-head"><span class="scode">R-1</span><h2>단계별 로드맵</h2><span class="spct" id="pct-road"></span></div>
+      <div class="sec-bar"><i class="g" id="barg-road"></i><i class="a" id="bara-road"></i></div>
+      <ul class="check" data-sec="road">
+        <li data-id="rd1"><span class="txt"><span class="tagp">1단계</span>상품/포지셔닝 정리 <small>수익형 중심 메시지 확장 · 진단 패키지 상품화 · 홈페이지 문구 개편안</small></span></li>
+        <li data-id="rd2"><span class="txt"><span class="tagp ax">2단계</span>매출 연결 AX <small>문의 폼 재설계 · 상담 브리핑 자동화 · 유형별 후속 자동화 · 제안서 초안 생성</small></span></li>
+        <li data-id="rd3"><span class="txt"><span class="tagp">3단계</span>영업자료 구축 <small>회사소개서 · 유형별 제안서 · 대표 프로젝트 5~7개 사례화</small></span></li>
+        <li data-id="rd4"><span class="txt"><span class="tagp">4단계</span>마케팅 자동화 <small>문제해결 블로그 · 랜딩 · 네이버/메타 소액 테스트 · 쇼츠/릴스</small></span></li>
+        <li data-id="rd5"><span class="txt"><span class="tagp">5단계</span>NAS 데이터 기반 만들기 <small>최근 자재시트/자재배치도/완공 대표컷 수집 · 파일 인덱스 생성</small></span></li>
+        <li data-id="rd6"><span class="txt"><span class="tagp">6단계</span>내부 자동화 PoC <small>자재시트 파서 · 배치도 파서 · 공간별 자재표/사양서 자동 생성</small></span></li>
+        <li data-id="rd7"><span class="txt"><span class="tagp">7단계</span>운영 시스템 확장 <small>Design Spec · Material DB · Client Decision Portal · Estimate Prep</small></span></li>
+      </ul>
+    </section>
+
+    <section id="s-use">
+      <div class="sec-head"><span class="scode">?</span><h2>사용법 · 구글시트 연결</h2></div>
+      <p class="lead">세팅 전에도 이 파일은 바로 작동합니다(로컬 저장). 아래 순서로 구글시트에 연결하면, 상태·메모가 시트에 저장되고 PC·휴대폰·직원이 같은 데이터를 공유하게 됩니다.</p>
+
+      <h3 class="subh">1단계 · GitHub Pages 배포</h3>
+      <ol class="steps">
+        <li>github.com 에서 새 저장소 생성 (예: <code>arkireal-dashboard</code>)</li>
+        <li>이 <code>index.html</code> 업로드 (Add file → Upload files)</li>
+        <li>Settings → Pages → Branch: <code>main / (root)</code> → Save</li>
+        <li>1~2분 뒤 <code>https://아이디.github.io/arkireal-dashboard/</code> 접속</li>
+      </ol>
+
+      <h3 class="subh">2단계 · 구글시트 + Apps Script</h3>
+      <ol class="steps">
+        <li>구글 드라이브에서 새 <b>구글 시트</b> 생성</li>
+        <li>상단 메뉴 <b>확장 프로그램 → Apps Script</b></li>
+        <li>기본 코드를 지우고 아래 코드를 붙여넣고 저장(디스크 아이콘)</li>
+        <li>우측 상단 <b>배포 → 새 배포 → 유형: 웹 앱</b></li>
+        <li>실행: <b>나</b> / 액세스 권한: <b>모든 사용자</b> → 배포 → (최초 1회 권한 승인)</li>
+        <li>나온 <b>웹 앱 URL</b>(끝이 <code>/exec</code>)을 복사</li>
+      </ol>
+      <div class="ref"><div class="rh"><span class="rc">APPS SCRIPT</span><span class="rt">시트에 붙여넣을 코드 (TOKEN은 대시보드와 동일하게)</span><button onclick="copyRef(this)">복사</button></div>
+        <pre>var TOKEN = "arkireal-secret-1234";
+var SHEET = "data";
+
+function sh_(){
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var s = ss.getSheetByName(SHEET);
+  if(!s){ s = ss.insertSheet(SHEET); s.appendRow(["id","status","memo","updated"]); }
+  return s;
+}
+function out_(o){
+  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+}
+function doGet(e){
+  if(e.parameter.token !== TOKEN) return out_({ok:false});
+  var v = sh_().getDataRange().getValues();
+  var items = {};
+  for(var i=1;i&lt;v.length;i++){
+    if(v[i][0]==="") continue;
+    items[String(v[i][0])] = {s:v[i][1]||"todo", m:v[i][2]||""};
+  }
+  return out_({ok:true, items:items});
+}
+function doPost(e){
+  var b = {};
+  try{ b = JSON.parse(e.postData.contents); }catch(err){}
+  if(b.token !== TOKEN) return out_({ok:false});
+  var s = sh_(), last = s.getLastRow();
+  if(b.action === "reset"){
+    if(last &gt; 1) s.deleteRows(2, last-1);
+    return out_({ok:true});
+  }
+  var ids = last===0 ? [] : s.getRange(1,1,last,1).getValues();
+  var row = 0;
+  for(var i=1;i&lt;ids.length;i++){ if(String(ids[i][0])===String(b.id)){ row=i+1; break; } }
+  if(row===0) s.appendRow([b.id, b.s||"todo", b.m||"", new Date()]);
+  else s.getRange(row,2,1,3).setValues([[b.s||"todo", b.m||"", new Date()]]);
+  return out_({ok:true});
+}</pre></div>
+
+      <h3 class="subh">3단계 · 대시보드에 연결</h3>
+      <ol class="steps">
+        <li>이 대시보드 좌측 하단 <b>⚙ 시트 연결</b> 클릭</li>
+        <li>웹 앱 URL과 토큰(<code>arkireal-secret-1234</code>) 입력 → <b>연결 테스트</b> → <b>저장하고 동기화</b></li>
+        <li>사이드바 표시가 <b>"시트 동기화됨"</b>(초록)으로 바뀌면 완료</li>
+      </ol>
+      <div class="note-blue"><b>모든 기기에 기본 적용:</b> 위 3단계는 그 기기에만 적용됩니다. PC·휴대폰·직원 모두 자동 연결하려면, <code>index.html</code> 상단 스크립트의 <code>CFG_URL_DEFAULT</code>·<code>CFG_TOKEN_DEFAULT</code> 두 줄을 실제 값으로 바꿔 다시 업로드하세요. 그러면 접속하는 모든 기기가 자동으로 시트와 연결됩니다.</div>
+      <div class="callout"><b>주의:</b> ① 동시 편집은 "나중에 저장한 것이 이김"입니다(혼자/소수면 문제없음). ② 토큰은 코드의 <code>TOKEN</code>과 대시보드 값이 <b>반드시 같아야</b> 합니다. ③ 토큰은 접근을 막는 최소 장치일 뿐이니, 민감정보는 넣지 마세요. ④ 오프라인이거나 시트 연결 실패 시 자동으로 로컬 저장으로 유지되고, 다시 연결되면 동기화됩니다.</div>
+    </section>
+  </main>
+</div>
+
+<div class="cfg-overlay" id="cfgOverlay">
+  <div class="cfg-card">
+    <h3>구글 시트 연결</h3>
+    <p>Apps Script 웹앱 주소와 토큰을 넣으면 이 기기의 상태·메모가 시트와 동기화됩니다.</p>
+    <label>웹앱 주소 (끝이 /exec)</label>
+    <input id="cfgUrl" placeholder="https://script.google.com/macros/s/AKfy.../exec">
+    <label>토큰 (Apps Script의 TOKEN과 동일)</label>
+    <input id="cfgToken" placeholder="arkireal-secret-1234">
+    <div class="cfg-status" id="cfgStatus"></div>
+    <div class="cfg-row">
+      <button class="btn-ghost" onclick="testCfg()">연결 테스트</button>
+      <button class="btn-primary" onclick="applyCfg()">저장하고 동기화</button>
+    </div>
+    <div class="cfg-row"><button class="btn-ghost" onclick="closeCfg()">닫기</button></div>
+  </div>
+</div>
+
+<script>
+var CFG_URL_DEFAULT = "";
+var CFG_TOKEN_DEFAULT = "arkireal-secret-1234";
+
+var KEY="arkireal_dashboard_v2", OLD="arkireal_dashboard_v1", CFGKEY="arkireal_cfg";
+var state={}, pending={}, memoTimer=null;
+
+function cfg(){ var o={}; try{o=JSON.parse(localStorage.getItem(CFGKEY)||"null")||{};}catch(e){} return { url:(o.url!==undefined?o.url:CFG_URL_DEFAULT)||"", token:(o.token!==undefined?o.token:CFG_TOKEN_DEFAULT)||"" }; }
+function saveCfgLocal(u,t){ localStorage.setItem(CFGKEY, JSON.stringify({url:u,token:t})); }
+
+try{ state=JSON.parse(localStorage.getItem(KEY)||"null")||{}; }catch(e){ state={}; }
+if(Object.keys(state).length===0){ try{ var old=JSON.parse(localStorage.getItem(OLD)||"null"); if(old){ for(var k in old){ if(old[k]===true) state[k]={s:'done',m:''}; } } }catch(e){} }
+
+var STATUSES=[['todo','할 일'],['doing','진행'],['done','완료'],['skip','불필요']];
+function save(){ localStorage.setItem(KEY,JSON.stringify(state)); }
+function get(id){ var v=state[id]; if(!v) return {s:'todo',m:''}; if(typeof v==='boolean') return {s:v?'done':'todo',m:''}; return {s:v.s||'todo', m:v.m||''}; }
+function setLocal(id,patch){ var c=get(id); state[id]={s:patch.s!==undefined?patch.s:c.s, m:patch.m!==undefined?patch.m:c.m}; save(); }
+
+function setSync(mode){ var p=document.getElementById('syncPill'), t=document.getElementById('syncText'); p.className='syncpill '+mode; t.textContent = mode==='sheet'?'시트 동기화됨': mode==='syncing'?'동기화 중…': mode==='offline'?'오프라인(로컬)':'로컬 저장'; }
+function apiGet(c){ return c.url + (c.url.indexOf('?')>-1?'&':'?') + 'token=' + encodeURIComponent(c.token); }
+
+function pull(){ var c=cfg(); if(!c.url){ setSync('local'); return; } setSync('syncing');
+  fetch(apiGet(c),{method:'GET'}).then(function(r){return r.json();}).then(function(d){
+    if(d && d.ok && d.items){ state={}; for(var k in d.items){ state[k]={s:d.items[k].s||'todo', m:d.items[k].m||''}; } save(); renderAll(); setSync('sheet'); }
+    else { setSync('offline'); }
+  }).catch(function(){ setSync('offline'); });
+}
+function push(id){ var c=cfg(); save(); if(!c.url){ setSync('local'); return; } var it=get(id); setSync('syncing');
+  fetch(c.url,{method:'POST', body:JSON.stringify({token:c.token, id:id, s:it.s, m:it.m})})
+    .then(function(){ delete pending[id]; setSync('sheet'); })
+    .catch(function(){ pending[id]=true; setSync('offline'); });
+}
+function flush(){ Object.keys(pending).forEach(function(id){ push(id); }); }
+
+function build(){
+  document.querySelectorAll('ul.check li').forEach(function(li){
+    var id=li.dataset.id, cur=get(id);
+    var ctrls=document.createElement('div'); ctrls.className='ctrls';
+    var grp=document.createElement('div'); grp.className='status'; grp.setAttribute('role','group');
+    STATUSES.forEach(function(pair){
+      var b=document.createElement('button'); b.type='button'; b.dataset.s=pair[0]; b.textContent=pair[1];
+      b.addEventListener('click',function(){ var c=get(id); setLocal(id,{s:c.s===pair[0]?'todo':pair[0]}); paint(li); progress(); push(id); });
+      grp.appendChild(b);
+    });
+    ctrls.appendChild(grp);
+    var mt=document.createElement('button'); mt.type='button'; mt.className='memo-toggle'; mt.textContent='메모';
+    mt.addEventListener('click',function(){ li.classList.toggle('memo-open'); });
+    ctrls.appendChild(mt); li.appendChild(ctrls);
+    var mw=document.createElement('div'); mw.className='memo-wrap';
+    var ta=document.createElement('textarea'); ta.placeholder='메모'; ta.value=cur.m||'';
+    ta.addEventListener('input',function(){ setLocal(id,{m:ta.value}); memoBtn(li); clearTimeout(memoTimer); memoTimer=setTimeout(function(){ push(id); },700); });
+    ta.addEventListener('blur',function(){ clearTimeout(memoTimer); push(id); });
+    mw.appendChild(ta); li.appendChild(mw);
+    if(cur.m) li.classList.add('memo-open');
+    paint(li); memoBtn(li);
+  });
+}
+function paint(li){ var s=get(li.dataset.id).s; li.classList.remove('s-todo','s-doing','s-done','s-skip'); li.classList.add('s-'+s); li.querySelectorAll('.status button').forEach(function(b){ b.classList.toggle('on', b.dataset.s===s); }); }
+function memoBtn(li){ var has=!!get(li.dataset.id).m, mt=li.querySelector('.memo-toggle'); mt.classList.toggle('has',has); mt.textContent = has ? '메모 ●' : '메모'; }
+function renderAll(){ document.querySelectorAll('ul.check li').forEach(function(li){ paint(li); memoBtn(li); var ta=li.querySelector('.memo-wrap textarea'); var m=get(li.dataset.id).m; if(ta && document.activeElement!==ta){ ta.value=m||''; } if(m) li.classList.add('memo-open'); }); progress(); }
+function progress(){
+  document.querySelectorAll('section[data-sec]').forEach(function(sec){
+    var items=sec.querySelectorAll('ul.check li'); if(!items.length) return;
+    var done=0,doing=0,skip=0,total=0;
+    items.forEach(function(li){ var s=get(li.dataset.id).s; total++; if(s==='done')done++; else if(s==='doing')doing++; else if(s==='skip')skip++; });
+    var den=total-skip;
+    var g=document.getElementById('barg-'+sec.dataset.sec), a=document.getElementById('bara-'+sec.dataset.sec), lab=document.getElementById('pct-'+sec.dataset.sec);
+    if(g) g.style.width=(den?Math.round(done/den*100):0)+'%';
+    if(a) a.style.width=(den?Math.round(doing/den*100):0)+'%';
+    if(lab) lab.textContent=done+' / '+den+(skip?' (불필요 '+skip+')':'');
+    var tick=document.querySelector('nav a[href="#'+sec.id+'"] .tick');
+    if(tick) tick.textContent=(den>0&&done===den)?'✓':(done>0?String(done):'');
+  });
+  var t=0,d=0,dg=0,sk=0;
+  document.querySelectorAll('ul.check li').forEach(function(li){ var s=get(li.dataset.id).s; t++; if(s==='done')d++; else if(s==='doing')dg++; else if(s==='skip')sk++; });
+  var den=t-sk, pct=den?Math.round(d/den*100):0;
+  document.getElementById('ovBarG').style.width=pct+'%';
+  document.getElementById('ovBarA').style.width=(den?Math.round(dg/den*100):0)+'%';
+  document.getElementById('ovPct').textContent=pct;
+  document.getElementById('ovCount').textContent=d+' / '+den;
+}
+function resetAll(){ if(!confirm('모든 상태와 메모를 초기화할까요? 되돌릴 수 없습니다.')) return; var c=cfg(); if(c.url){ try{ fetch(c.url,{method:'POST', body:JSON.stringify({token:c.token, action:'reset'})}); }catch(e){} } state={}; save(); setTimeout(function(){ location.reload(); },400); }
+function copyRef(btn){ var pre=btn.closest('.ref').querySelector('pre'); var txt=pre.innerText; navigator.clipboard.writeText(txt).then(function(){ var o=btn.textContent; btn.textContent='복사됨'; btn.classList.add('copied'); setTimeout(function(){ btn.textContent=o; btn.classList.remove('copied'); },1400); }).catch(function(){ btn.textContent='복사 실패'; }); }
+
+function openCfg(){ var c=cfg(); document.getElementById('cfgUrl').value=c.url; document.getElementById('cfgToken').value=c.token; document.getElementById('cfgStatus').textContent=''; document.getElementById('cfgOverlay').classList.add('show'); }
+function closeCfg(){ document.getElementById('cfgOverlay').classList.remove('show'); }
+function testCfg(){ var u=document.getElementById('cfgUrl').value.trim(), t=document.getElementById('cfgToken').value.trim(), st=document.getElementById('cfgStatus'); if(!u){ st.style.color='#a32d2d'; st.textContent='주소를 입력하세요.'; return; } st.style.color='#6E6A61'; st.textContent='테스트 중…';
+  fetch(u+(u.indexOf('?')>-1?'&':'?')+'token='+encodeURIComponent(t),{method:'GET'}).then(function(r){return r.json();}).then(function(d){ if(d&&d.ok){ st.style.color='#3E7D5A'; st.textContent='연결 성공 · 항목 '+Object.keys(d.items||{}).length+'개 확인'; } else { st.style.color='#a32d2d'; st.textContent='응답은 왔지만 인증 실패 — 토큰을 확인하세요.'; } }).catch(function(){ st.style.color='#a32d2d'; st.textContent='연결 실패 — 주소/배포 설정을 확인하세요.'; }); }
+function applyCfg(){ var u=document.getElementById('cfgUrl').value.trim(), t=document.getElementById('cfgToken').value.trim(); saveCfgLocal(u,t); closeCfg(); pull(); }
+
+var io=new IntersectionObserver(function(entries){ entries.forEach(function(en){ if(en.isIntersecting){ document.querySelectorAll('nav a.navlink').forEach(function(a){a.classList.remove('active');}); var l=document.querySelector('nav a[href="#'+en.target.id+'"]'); if(l) l.classList.add('active'); } }); },{rootMargin:"-20% 0px -70% 0px"});
+document.querySelectorAll('main section').forEach(function(s){ io.observe(s); });
+function toggleNav(){ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('scrim').classList.toggle('show'); }
+document.querySelectorAll('nav a.navlink').forEach(function(a){ a.addEventListener('click',function(){ if(window.innerWidth<=900) toggleNav(); }); });
+
+build(); progress();
+(function(){ var c=cfg(); if(c.url) pull(); else setSync('local'); })();
+window.addEventListener('focus', function(){ if(Object.keys(pending).length) flush(); else { var c=cfg(); if(c.url) pull(); } });
+</script>
+</body>
+</html>
